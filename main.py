@@ -9,6 +9,9 @@ object-orientated programming and classes.
 # used for shuffling deck before dealing cards
 import random
 
+# used for pausing print statements to make program more user-friendly
+import time
+
 # variables to store type of cards
 suits = ('Hearts', 'Diamonds', 'Spades', 'Clubs')
 ranks = ('Two', 'Three', 'Four', 'Five', 'Six', 'Seven',
@@ -98,9 +101,9 @@ class Hand:
     '''
 
     def __init__(self):
-        self.cards = []  # start with an empty list as we did in the Deck class
-        self.value = 0   # start with zero value
-        self.aces = 0    # add an attribute to keep track of aces
+        self.cards = []         # start with an empty list as we did in the Deck class
+        self.value = 0          # start with zero value
+        self.aces = 0           # add an attribute to keep track of aces
 
     def add_card(self, card):
         '''
@@ -134,7 +137,7 @@ class Chips:
     '''
 
     def __init__(self):
-        self.total = 100  # This can be set to a default value or supplied by a user input
+        self.total = 100  # Starting amount of chips
         self.bet = 0
 
     def win_bet(self):
@@ -166,9 +169,16 @@ def take_bet(chips):
         except:
             print("Invalid input.")
         else:
-            if chips.bet > chips.total:
+            if chips.bet <= 0:
+                print("You must enter an amount greater than 0.")
+            elif chips.bet > chips.total:
                 print("Your bet cannot exceed " + str(chips.total) + ".")
+                continue
             else:
+                print("\nYou bet " + str(chips.bet) + " chips.")
+                print("Chips remaining: ", + (chips.total - chips.bet))
+                print("===================================")
+                time.sleep(3)
                 break
 
 
@@ -199,13 +209,24 @@ def hit_or_stand(deck, hand):
     global playing  # to control an upcoming while loop
 
     while True:
-        x = input("Would you like to hit or stand?")
+        if player_hand.value == 21:
+            print("BLACKJACK!")
+            time.sleep(3)
+            print("===================================")
+            playing = False
+            break
+
+        x = input("Would you like to hit or stand? ")
 
         if x.lower() == 'hit':
+            print("===================================\n")
+            time.sleep(1)
             hit(deck, hand)  # hit() function defined above
 
         elif x.lower() == 'stand':
             print("Player stands. Dealer is playing.")
+            print("===================================\n")
+            time.sleep(3)
             playing = False
 
         else:
@@ -228,6 +249,7 @@ def show_some(player, dealer):
     print(" <card hidden>")
     print('', dealer.cards[1])
     print("\nPlayer's Hand:", *player.cards, sep='\n ')
+    print('Total: ' + str(player.value) + '\n')
 
 
 def show_all(player, dealer):
@@ -317,14 +339,25 @@ def push(player, dealer):
 
     print("Dealer and Player tie! It's a push.")
 
+# GAMEPLAY
+
+
+# Print an opening statement
+print('Welcome to BlackJack! Get as close to 21 without going over.\n\
+Dealer hits until he reaches 17 or over.\n')
+
+# Print amount of chips the player starts with
+print('You will start with 100 chips.\n')
+
+time.sleep(3)
+
+player_chips = Chips()
 
 while True:
-    # Print an opening statement
-    print('Welcome to BlackJack! Get as close to 21 without going over.\n\
-    Dealer hits until he reaches 17 or over.\n')
+    print('Chips remaining: ' + str(player_chips.total))
 
-    # Print amount of chips the player starts with
-    print('You will start with 100 chips.\n')
+    # Prompt the Player for their bet
+    take_bet(player_chips)
 
     # Create & shuffle the deck, deal two cards to each player
     deck = Deck()
@@ -338,12 +371,6 @@ while True:
     dealer_hand.add_card(deck.deal())
     dealer_hand.add_card(deck.deal())
 
-    # Set up the Player's chips
-    player_chips = Chips()  # default value is 100
-
-    # Prompt the Player for their bet
-    take_bet(player_chips)
-
     # Show cards (but keep one dealer card hidden)
     show_some(player_hand, dealer_hand)
 
@@ -352,13 +379,18 @@ while True:
         # Prompt for Player to Hit or Stand
         hit_or_stand(deck, player_hand)
 
-        # Show cards (but keep one dealer card hidden)
-        show_some(player_hand, dealer_hand)
-
         # If player's hand exceeds 21, run player_busts() and break out of loop
         if player_hand.value > 21:
+            show_all(player_hand, dealer_hand)
             player_busts(player_hand, dealer_hand, player_chips)
             break
+
+        # If player's hand is 21, break out of loop
+        if player_hand.value == 21:
+            break
+
+        # Show cards (but keep one dealer card hidden)
+        show_some(player_hand, dealer_hand)
 
     # If Player hasn't busted, play Dealer's hand until Dealer reaches 17
     if player_hand.value <= 21:
@@ -385,7 +417,28 @@ while True:
     # Inform Player of their chips total
     print("\nPlayer's winnings:", player_chips.total)
 
-    # Ask to play again
+    # Player has 0 chips remaining, ask to play again
+    if player_chips.total == 0:
+        print("You ran out of chips!")
+
+        new_game = input(
+            "Would you like to start over and play again (yes or no)? ")
+
+        # Ask to play again
+        if new_game.lower() == 'yes':
+            player_chips.total = 100
+
+            print("Restarting game...\n")
+            time.sleep(3)
+            continue
+        elif new_game.lower() == 'no':
+            print("Thanks for playing!")
+            break
+        else:
+            print("Invalid input.")
+            break
+
+    # Player has more than 0 chips remaining, ask to play again
     new_game = input("Would you like to play again? (yes or no) ")
 
     if new_game.lower() == 'yes':
@@ -393,7 +446,6 @@ while True:
         continue
     elif new_game.lower() == 'no':
         print("Thanks for playing!")
-        playing = True
         break
     else:
         print("Invalid input.")
